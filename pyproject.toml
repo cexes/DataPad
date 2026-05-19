@@ -1,0 +1,20 @@
+[project]
+name = "datapad"
+version = "0.1.0"
+description = "Terminal-based database client with Oracle support and SSH jump server"
+requires-python = ">=3.10"
+dependencies = [
+    "oracledb>=2.0.0",
+    "paramiko>=3.4.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "rich>=13.7.0",
+    "prompt_toolkit>=3.0.0",
+]
+
+[project.scripts]
+tdb = "terminal_db.main:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
