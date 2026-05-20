@@ -2,6 +2,8 @@
 
 Terminal-based database client for Oracle with SSH jump server support, similar to `sqlplus` or `psql`.
 
+![Demo](demo.gif)
+
 ## Features
 
 - **Oracle Database Connection** - Connect to Oracle databases using service name or SID
