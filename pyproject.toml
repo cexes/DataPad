@@ -11,10 +11,12 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "rich>=13.7.0",
     "prompt_toolkit>=3.0.0",
+    "mcp>=1.0.0",
 ]
 
 [project.scripts]
 tdb = "terminal_db.main:main"
+tdb-mcp = "terminal_db.mcp.server:main"
 
 [build-system]
 requires = ["setuptools>=68.0"]

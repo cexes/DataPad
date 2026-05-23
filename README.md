@@ -12,6 +12,7 @@ Terminal-based database client for Oracle and PostgreSQL with SSH jump server su
 - **Table Formatting** - Results displayed as formatted tables in the terminal
 - **Saved Connections** - SQLite database to save and load connection profiles
 - **Meta Commands** - `.tables`, `.describe`, `.connect`, `.save`, `.load`, etc.
+- **MCP Server** - Expose database tools to LLMs via Model Context Protocol (`tdb-mcp`)
 
 ## Requirements
 
@@ -105,8 +106,39 @@ src/terminal_db/
 ├── ssh_tunnel.py              # SSH tunnel manager with paramiko
 ├── query_executor.py          # SQL query executor (Oracle & PostgreSQL)
 ├── connection_store.py        # SQLite connection storage
+├── mcp/                       # MCP server for LLM integration
+│   └── server.py              #   tools: connect, list_tables, describe_table, execute_query
 └── ui/                        # Legacy TUI (deprecated)
 ```
+
+## MCP Server (AI Integration)
+
+DataPad provides an MCP server so LLMs (Claude, Copilot, etc.) can query your databases directly.
+
+```bash
+tdb-mcp
+```
+
+Configure in your MCP client (e.g., Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "datapad": {
+      "command": "tdb-mcp"
+    }
+  }
+}
+```
+
+Available tools:
+- `list_connections` — List saved connections
+- `connect(connection_name)` — Connect using a saved profile
+- `list_tables` — List tables in current schema
+- `describe_table(table_name)` — Show column structure
+- `execute_query(query)` — Run SELECT queries (read-only)
+
+Save a connection first via `tdb`, then the MCP server uses the same `~/.terminal_db/connections.db`.
 
 ## License
 
