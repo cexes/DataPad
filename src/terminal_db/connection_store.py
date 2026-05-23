@@ -42,6 +42,11 @@ class ConnectionStore:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            # Migrate: add db_type column if missing (existing databases)
+            try:
+                conn.execute("ALTER TABLE connections ADD COLUMN db_type TEXT NOT NULL DEFAULT 'oracle'")
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
 
     def save(self, profile: ConnectionProfile) -> int:
