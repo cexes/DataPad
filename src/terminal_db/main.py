@@ -15,11 +15,10 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 
-from terminal_db.config import ConnectionProfile, DbConfig, SshConfig
-from terminal_db.db_connection import DatabaseConnection
+from terminal_db.config import ConnectionProfile, DbConfig, DbType, DB_DEFAULT_PORTS, SshConfig
+from terminal_db.db_connection import create_connection
 from terminal_db.query_executor import QueryExecutor
 from terminal_db.connection_store import ConnectionStore
-from terminal_db.ssh_tunnel import SshTunnel
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -203,7 +202,7 @@ class TerminalDbCLI:
             console.print(f"[cyan]SSH tunnel via {self.profile.ssh.host}...[/cyan]")
 
         try:
-            self.db_conn = DatabaseConnection(
+            self.db_conn = create_connection(
                 self.profile.db,
                 self.profile.ssh if self.profile.ssh.enabled else None,
             )
@@ -211,7 +210,8 @@ class TerminalDbCLI:
             self.executor = QueryExecutor(self.db_conn)
             
             version = self.db_conn.get_server_version()
-            console.print(f"[green]Connected to Oracle {version}[/green]")
+            db_label = self.db_conn.db_type.value.upper()
+            console.print(f"[green]Connected to {db_label} {version}[/green]")
             
             if not name:
                 try:
@@ -228,16 +228,25 @@ class TerminalDbCLI:
 
     def _prompt_connection(self) -> Optional[ConnectionProfile]:
         console.print("\n[bold cyan]Database Connection[/bold cyan]")
-        
+
+        db_type_str = Prompt.ask("Database type", default="oracle", choices=["oracle", "postgres"])
+        db_type = DbType(db_type_str)
+        default_port = str(DB_DEFAULT_PORTS[db_type])
+
         host = Prompt.ask("Host", default="")
         if not host:
             return None
-            
-        port = Prompt.ask("Port", default="1521")
-        service_name = Prompt.ask("Service Name", default="")
-        sid = Prompt.ask("SID (optional)", default="")
+
+        port = Prompt.ask("Port", default=default_port)
+        service_name = Prompt.ask("Database/Service Name", default="")
         username = Prompt.ask("Username", default="")
         password = Prompt.ask("Password", password=True, default="")
+
+        sid = None
+        mode = "NORMAL"
+        if db_type == DbType.ORACLE:
+            sid = Prompt.ask("SID (optional)", default="") or None
+            mode = Prompt.ask("Mode", default="NORMAL", choices=["NORMAL", "SYSDBA", "SYSOPER"])
 
         console.print("\n[bold cyan]SSH Jump Server (optional, leave empty to skip)[/bold cyan]")
         ssh_host = Prompt.ask("SSH Host", default="")
@@ -254,12 +263,14 @@ class TerminalDbCLI:
         name = Prompt.ask("Connection name (auto-saved)", default=f"{host}:{port}")
 
         db_config = DbConfig(
+            db_type=db_type,
             host=host,
             port=int(port),
             service_name=service_name,
-            sid=sid or None,
+            sid=sid,
             username=username,
             password=password,
+            mode=mode,
         )
 
         return ConnectionProfile(name=name, db=db_config, ssh=ssh_config)

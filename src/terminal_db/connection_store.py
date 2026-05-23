@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Optional
-from terminal_db.config import ConnectionProfile, DbConfig, SshConfig
+from terminal_db.config import ConnectionProfile, DbConfig, DbType, SshConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class ConnectionStore:
                 CREATE TABLE IF NOT EXISTS connections (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
+                    db_type TEXT NOT NULL DEFAULT 'oracle',
                     db_host TEXT NOT NULL,
                     db_port INTEGER NOT NULL DEFAULT 1521,
                     db_service_name TEXT,
@@ -47,12 +48,13 @@ class ConnectionStore:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
                 INSERT OR REPLACE INTO connections (
-                    name, db_host, db_port, db_service_name, db_sid,
+                    name, db_type, db_host, db_port, db_service_name, db_sid,
                     db_username, db_password, db_mode,
                     ssh_enabled, ssh_host, ssh_port, ssh_username, ssh_key_path, ssh_password
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 profile.name,
+                profile.db.db_type.value,
                 profile.db.host,
                 profile.db.port,
                 profile.db.service_name,
@@ -81,6 +83,7 @@ class ConnectionStore:
             return ConnectionProfile(
                 name=row["name"],
                 db=DbConfig(
+                    db_type=DbType(row["db_type"]),
                     host=row["db_host"],
                     port=row["db_port"],
                     service_name=row["db_service_name"] or "",

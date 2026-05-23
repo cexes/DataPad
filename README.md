@@ -1,12 +1,12 @@
 # Datapad
 
-Terminal-based database client for Oracle with SSH jump server support, similar to `sqlplus` or `psql`.
+Terminal-based database client for Oracle and PostgreSQL with SSH jump server support.
 
 ![Demo](demo.gif)
 
 ## Features
 
-- **Oracle Database Connection** - Connect to Oracle databases using service name or SID
+- **Multi-Database Support** - Connect to Oracle (service name/SID) or PostgreSQL
 - **SSH Jump Server** - Tunnel connections through SSH jump servers with key-based or password authentication
 - **Interactive SQL Prompt** - Full-featured terminal prompt with history and auto-completion
 - **Table Formatting** - Results displayed as formatted tables in the terminal
@@ -77,9 +77,10 @@ Query history is saved in `~/.terminal_db/query_history.txt`.
 ### Database Connection
 | Field | Description | Example |
 |-------|-------------|---------|
+| Database Type | `oracle` or `postgres` | `oracle` |
 | Host | Database server hostname | `db.example.com` |
-| Port | Database port (default: 1521) | `1521` |
-| Service Name | Oracle service name | `ORCLPDB1` |
+| Port | Database port | `1521` (Oracle) / `5432` (PostgreSQL) |
+| Service Name | Oracle service name or PostgreSQL database name | `ORCLPDB1` / `mydb` |
 | SID | Oracle SID (alternative to service name) | `ORCL` |
 | Username | Database username | `system` |
 | Password | Database password | `••••••` |
@@ -97,13 +98,14 @@ Query history is saved in `~/.terminal_db/query_history.txt`.
 
 ```
 src/terminal_db/
-├── main.py                 # CLI entry point
-── config.py               # Pydantic models for connection config
-├── db_connection.py        # Oracle connection manager
-├── ssh_tunnel.py           # SSH tunnel manager with paramiko
-├── query_executor.py       # SQL query executor
-├── connection_store.py     # SQLite connection storage
-└── ui/                     # Legacy TUI (deprecated)
+├── main.py                    # CLI entry point
+├── config.py                  # Pydantic models for connection config
+├── db_connection.py           # Base ABC + OracleConnection + factory
+├── db_connection_postgres.py  # PostgreSQL connection
+├── ssh_tunnel.py              # SSH tunnel manager with paramiko
+├── query_executor.py          # SQL query executor (Oracle & PostgreSQL)
+├── connection_store.py        # SQLite connection storage
+└── ui/                        # Legacy TUI (deprecated)
 ```
 
 ## License
