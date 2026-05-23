@@ -320,7 +320,8 @@ class TerminalDbCLI:
             console.print("[red]Usage: .describe <table_name>[/red]")
             return
 
-        result = self.executor.get_table_columns(table_name.upper())
+        lookup_name = table_name.upper() if self.db_conn.db_type == DbType.ORACLE else table_name.lower()
+        result = self.executor.get_table_columns(lookup_name)
         if result.error:
             console.print(f"[red]Error: {result.error}[/red]")
             return
