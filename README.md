@@ -13,6 +13,7 @@ Terminal-based database client for Oracle and PostgreSQL with SSH jump server su
 - **Saved Connections** - SQLite database to save and load connection profiles
 - **Meta Commands** - `.tables`, `.describe`, `.connect`, `.save`, `.load`, etc.
 - **MCP Server** - Expose database tools to LLMs via Model Context Protocol (`tdb-mcp`)
+- **MCP Query Control** - Configure which tools and query modes the LLM can use via `~/.terminal_db/mcp.toml`
 
 ## Requirements
 
@@ -106,9 +107,9 @@ src/terminal_db/
 ├── ssh_tunnel.py              # SSH tunnel manager with paramiko
 ├── query_executor.py          # SQL query executor (Oracle & PostgreSQL)
 ├── connection_store.py        # SQLite connection storage
-├── mcp/                       # MCP server for LLM integration
-│   └── server.py              #   tools: connect, list_tables, describe_table, execute_query
-└── ui/                        # Legacy TUI (deprecated)
+└── mcp/                       # MCP server for LLM integration
+    ├── server.py              #   tools: connect, list_tables, describe_table, execute_query
+    └── mcp_config.py          #   config loader (mcp.toml + CLI flags)
 ```
 
 ## MCP Server (AI Integration)
@@ -136,9 +137,37 @@ Available tools:
 - `connect(connection_name)` — Connect using a saved profile
 - `list_tables` — List tables in current schema
 - `describe_table(table_name)` — Show column structure
-- `execute_query(query)` — Run SELECT queries (read-only)
+- `execute_query(query)` — Run SQL queries (subject to query mode)
 
 Save a connection first via `tdb`, then the MCP server uses the same `~/.terminal_db/connections.db`.
+
+### MCP Configuration
+
+Control what the LLM can do by editing `~/.terminal_db/mcp.toml`:
+
+```toml
+[tools]
+allowed = ["list_tables", "describe_table", "execute_query", "connect", "list_connections"]
+
+[query]
+mode = "read-only"  # "read-only" | "write"
+max_rows = 200
+```
+
+#### Query Modes
+
+| Mode | Allowed |
+|------|---------|
+| `read-only` | SELECT only |
+| `write` | Any query (INSERT, UPDATE, DELETE, DDL) |
+
+#### CLI Flags (override toml)
+
+```bash
+tdb-mcp --allow-write        # enable write mode for this session
+tdb-mcp --max-rows 500       # override max rows
+tdb-mcp --tools list_tables,describe_table  # restrict available tools
+```
 
 ## License
 
